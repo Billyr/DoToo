@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DoToo.Models;
 
 namespace DoToo.ViewModels
@@ -18,5 +19,13 @@ namespace DoToo.ViewModels
 
         public event EventHandler ItemStatusChanged;
 
+        [RelayCommand]
+        void ToggleCompleted()
+        {
+            Item.Completed = !Item.Completed;
+            ItemStatusChanged?.Invoke(this, new EventArgs());
+        }
+
     }
+
 }

@@ -10,6 +10,7 @@
     <ContentPage.Resources>
         <ResourceDictionary>
             <converters:StatusColorConverter x:Key="statusColorConverter" />
+            <converters:FilterTextConverter x:Key="filterTextConverter" />
         </ResourceDictionary>
     </ContentPage.Resources>
     
@@ -22,14 +23,29 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
+        <Button Text="{Binding ShowAll, Converter={StaticResource filterTextConverter}, StringFormat='Shows: {0}'}"
+                Command="{Binding ToggleFilterCommand}"
+                Style="{DynamicResource FilterButton}"
+                BackgroundColor="{DynamicResource ActiveColor}"
+                TextColor="Black"
+                Margin="5">
+            <Button.Triggers>
+                <DataTrigger TargetType="Button" Binding="{Binding ShowAll}" Value="True">
+                    <Setter Property="BackgroundColor" Value="{DynamicResource CompletedColor}" />
+                    <Setter Property="TextColor" Value="White" />
+                </DataTrigger>
+            </Button.Triggers>
+        </Button>
         
-        <Button Text="Toggle Filter" Margin="5" />
-        
-        <ListView Grid.Row="1"
+        <ListView x:Name="ItemsListView" Grid.Row="1" SelectedItem="{Binding SelectedItem}"
                   RowHeight="70" ItemsSource="{Binding Items}">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="viewModels:TodoItemViewModel">
                     <ViewCell>
+                        <ViewCell.ContextActions>
+                            <MenuItem Text="{Binding StatusText}" Command="{Binding ToggleCompletedCommand}" />
+                        </ViewCell.ContextActions>
                         <Grid Padding="15, 10">
                             <Grid.RowDefinitions>
                                 <RowDefinition />
@@ -47,10 +63,12 @@
                             <Label Grid.Column="1"
                                    Text="{Binding Item.Title}" FontSize="Medium" />
                             <Label Grid.Column="1" Grid.Row="1"
-                                    Text="{Binding Item.Due}" FontSize="Micro" />
+                                    Text="{Binding Item.Due, StringFormat='{0:MMMM d, yyyy}'}" FontSize="Micro" />
                             <Label Grid.Column="1" Grid.Row="1"
-                                   HorizontalTextAlignment="End" Text="Completed"
-                                   IsVisible="{Binding Item.Completed}" FontSize="Micro" />
+                                   HorizontalTextAlignment="End" 
+                                   Text="Completed"
+                                   IsVisible="{Binding Item.Completed}" 
+                                   FontSize="Micro" />
                         </Grid>
                     </ViewCell>
                 </DataTemplate>

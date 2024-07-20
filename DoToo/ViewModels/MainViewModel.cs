@@ -16,6 +16,12 @@ namespace DoToo.ViewModels
         [ObservableProperty]
         ObservableCollection<TodoItemViewModel> items;
 
+        [ObservableProperty]
+        TodoItemViewModel selectedItem;
+
+        [ObservableProperty]
+        bool showAll;
+
         public MainViewModel(ITodoItemRepository todoItemRepository, IServiceProvider services)
         {
             this.repository = todoItemRepository;
@@ -31,9 +37,17 @@ namespace DoToo.ViewModels
 
             Task.Run(async () => await LoadDataAsync());
         }
+
         private async Task LoadDataAsync()
         {
+
             var items = await repository.GetItemAsync();
+
+            if (!ShowAll)
+            {
+                items = items.Where(x => x.Completed == false).ToList();
+            }
+
             var itemViewModels = items.Select(i => CreateTodoItemViewModel(i));
 
             Items = new ObservableCollection<TodoItemViewModel>(itemViewModels);
@@ -48,11 +62,44 @@ namespace DoToo.ViewModels
 
         private void ItemStatusChanged(object? sender, EventArgs e)
         {
-            
+            if (sender is TodoItemViewModel item)
+            {
+                if (!ShowAll && item.Item.Completed)
+                    Items.Remove(item);
+
+                Task.Run(async () => await repository.UpdateItemAsync(item.Item));
+
+            }
         }
 
+        [RelayCommand]
+        private async Task ToggleFilterAsync()
+        {
+            ShowAll = !ShowAll;
+            await LoadDataAsync();
+        }
 
+        partial void OnSelectedItemChanging(TodoItemViewModel value)
+        {
+            if (value == null)
+                return;
 
+            MainThread.BeginInvokeOnMainThread(async () => {
+                await NavigateToItemAsync(value); 
+            });
+        }
+
+        private async Task NavigateToItemAsync(TodoItemViewModel item)
+        {
+            var itemView = services.GetRequiredService<ItemView>();
+            var vm = itemView.BindingContext as ItemViewModel;
+
+            vm.Item = item.Item;
+            itemView.Title = "Edit Todo Item";
+
+            await Navigation.PushAsync(itemView);
+
+        }
 
         //public ICommand AddItemCommand => new Command(async () => {
         //    var itemView = services.GetRequiredService<ItemView>();
